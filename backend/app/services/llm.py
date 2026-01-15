@@ -9,7 +9,7 @@ DEFAULT_MODEL = "mistral-small-latest"
 
 FALLBACK_TEXT = (
     "Сервис генерации временно недоступен. "
-    "Проверьте MISTRAL_API_KEY в окружении."
+    "Проверьте LLM_API_KEY (Mistral) в окружении."
 )
 
 
@@ -26,14 +26,12 @@ def call_llm(prompt: str) -> str:
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 600,
     }
 
     data = json.dumps(payload).encode("utf-8")
-
     headers = {
-        "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
     }
 
     request = urllib.request.Request(
@@ -46,13 +44,11 @@ def call_llm(prompt: str) -> str:
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             body = response.read().decode("utf-8")
-    except (HTTPError, URLError, TimeoutError) as e:
-        print("LLM request error:", e)
+    except (HTTPError, URLError, TimeoutError):
         return FALLBACK_TEXT
 
     try:
         parsed = json.loads(body)
         return parsed["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        print("LLM parse error:", e)
+    except Exception:
         return FALLBACK_TEXT
