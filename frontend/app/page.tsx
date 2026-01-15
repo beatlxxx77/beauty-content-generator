@@ -13,28 +13,17 @@ export default function Page() {
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  const apiBase = (
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://beauty-content-generator.onrender.com"
-  ).replace(/\/+$/, "");
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
-  const isDisabled =
-    !city.trim() ||
-    !service.trim() ||
-    !targetAudience.trim() ||
-    !goal.trim();
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setResult("");
-    setCopied(false);
 
     try {
-      const response = await fetch(`${apiBase}/generate-post`, {
+      const res = await fetch(`${apiBase}/generate-post`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -45,111 +34,131 @@ export default function Page() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Ошибка генерации поста");
+      if (!res.ok) {
+        throw new Error("Ошибка генерации");
       }
 
-      const data = await response.json();
-      setResult(data.text || "");
+      const data = await res.json();
+      setResult(data.text);
     } catch {
-      setError("Не удалось связаться с сервером. Попробуйте позже.");
+      setError("Не удалось связаться с сервером");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCopy = async () => {
-    if (!result) return;
-    await navigator.clipboard.writeText(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <motion.main
-      className="min-h-screen bg-[#f7efe6] px-6 py-16"
+      className="min-h-screen bg-gradient-to-b from-[#F9EFE6] to-[#F3E4D8] px-6 py-16"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={transition}
     >
-      <div className="mx-auto max-w-3xl rounded-3xl bg-white p-10 shadow-xl">
-        <h1 className="mb-2 text-3xl font-semibold text-gray-900">
-          Сгенерируйте продающий пост
-        </h1>
-        <p className="mb-8 text-gray-600">
-          Введите данные салона — получите готовый текст для публикации
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <input
-            className="w-full rounded-xl border border-gray-200 px-5 py-4 text-base outline-none focus:border-[#e87b6d]"
-            placeholder="Город (например: Москва)"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            autoComplete="off"
-          />
-
-          <input
-            className="w-full rounded-xl border border-gray-200 px-5 py-4 text-base outline-none focus:border-[#e87b6d]"
-            placeholder="Услуга (маникюр, окрашивание и т.д.)"
-            value={service}
-            onChange={(e) => setService(e.target.value)}
-            autoComplete="off"
-          />
-
-          <input
-            className="w-full rounded-xl border border-gray-200 px-5 py-4 text-base outline-none focus:border-[#e87b6d]"
-            placeholder="Целевая аудитория (девушки 25–35)"
-            value={targetAudience}
-            onChange={(e) => setTargetAudience(e.target.value)}
-            autoComplete="off"
-          />
-
-          <input
-            className="w-full rounded-xl border border-gray-200 px-5 py-4 text-base outline-none focus:border-[#e87b6d]"
-            placeholder="Цель поста (заполнить запись)"
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            autoComplete="off"
-          />
-
-          <button
-            type="submit"
-            disabled={isDisabled || loading}
-            className="w-full rounded-full bg-[#e87b6d] py-4 text-lg font-semibold text-white transition hover:bg-[#e36d5e] disabled:opacity-50"
-          >
-            {loading ? "Генерируем…" : "Сгенерировать пост"}
-          </button>
-
-          {error && (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
+      <div className="mx-auto max-w-5xl space-y-16">
+        {/* HERO */}
+        <section className="grid gap-10 lg:grid-cols-2 items-center">
+          <div className="space-y-6">
+            <p className="text-sm tracking-[0.3em] text-[#8E9F8E] uppercase">
+              Контент для салонов без лишних затрат
             </p>
-          )}
-        </form>
-
-        {result && (
-          <motion.div
-            className="mt-8 rounded-2xl bg-gray-50 p-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-semibold uppercase text-gray-500">
-                Готовый пост
-              </span>
-              <button
-                onClick={handleCopy}
-                className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white"
+            <h1 className="text-4xl font-semibold text-[#1E1E1E]">
+              SaaS-генератор постов, который заменяет SMM и приводит записи
+            </h1>
+            <p className="text-[#555]">
+              Введите данные салона — получите продающий пост под вашу услугу и
+              аудиторию.
+            </p>
+            <div className="flex gap-4">
+              <a
+                href="#form"
+                className="rounded-full bg-[#E77463] px-6 py-3 text-white font-semibold shadow"
               >
-                {copied ? "Скопировано" : "Скопировать"}
-              </button>
+                Создать пост
+              </a>
+              <a
+                href="/examples"
+                className="rounded-full border px-6 py-3 font-semibold"
+              >
+                Посмотреть примеры
+              </a>
             </div>
-            <p className="whitespace-pre-wrap text-gray-800 leading-7">
-              {result}
-            </p>
-          </motion.div>
-        )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              ["Экономия времени", "Пост готов за минуту"],
+              ["Текст под услугу", "Адаптация под аудиторию"],
+              ["Больше записей", "Фокус на результате"],
+              ["Публикация сразу", "Без правок"],
+            ].map(([title, text]) => (
+              <div
+                key={title}
+                className="rounded-3xl bg-white p-5 shadow"
+              >
+                <h3 className="font-semibold">{title}</h3>
+                <p className="text-sm text-gray-600 mt-1">{text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* FORM */}
+        <section
+          id="form"
+          className="rounded-3xl bg-white p-10 shadow space-y-6"
+        >
+          <h2 className="text-2xl font-semibold">
+            Сформируйте пост под ваш салон
+          </h2>
+
+          <form onSubmit={handleSubmit} className="grid gap-6">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <input
+                placeholder="Город"
+                className="input"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+              <input
+                placeholder="Услуга"
+                className="input"
+                value={service}
+                onChange={(e) => setService(e.target.value)}
+              />
+            </div>
+
+            <input
+              placeholder="Целевая аудитория"
+              className="input"
+              value={targetAudience}
+              onChange={(e) => setTargetAudience(e.target.value)}
+            />
+
+            <input
+              placeholder="Цель поста"
+              className="input"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+            />
+
+            <button
+              disabled={loading}
+              className="rounded-full bg-[#E77463] py-4 text-white font-semibold"
+            >
+              {loading ? "Генерируем…" : "Сгенерировать пост"}
+            </button>
+
+            {error && (
+              <p className="text-red-600">{error}</p>
+            )}
+
+            {result && (
+              <div className="rounded-2xl bg-[#F9F4EE] p-6 whitespace-pre-wrap">
+                {result}
+              </div>
+            )}
+          </form>
+        </section>
       </div>
     </motion.main>
   );
