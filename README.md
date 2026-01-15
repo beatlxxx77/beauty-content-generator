@@ -1,1 +1,0 @@
-# beauty-content-generator
