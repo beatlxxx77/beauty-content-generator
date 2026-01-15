@@ -1,43 +1,43 @@
-import os
 import json
 import urllib.request
 from urllib.error import HTTPError, URLError
 
-LLM_API_KEY = os.getenv("LLM_API_KEY")
-LLM_API_URL = os.getenv("LLM_API_URL")
+from app.config import get_settings
+
+MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+DEFAULT_MODEL = "mistral-small-latest"
 
 FALLBACK_TEXT = (
     "Сервис генерации временно недоступен. "
-    "Укажите LLM_API_KEY и LLM_API_URL в окружении."
+    "Проверьте MISTRAL_API_KEY в окружении."
 )
-
-DEFAULT_MODEL = "mistralai/mistral-7b-instruct"
 
 
 def call_llm(prompt: str) -> str:
-    if not LLM_API_KEY or not LLM_API_URL:
+    settings = get_settings()
+    api_key = settings.llm_api_key
+
+    if not api_key:
         return FALLBACK_TEXT
 
     payload = {
         "model": DEFAULT_MODEL,
         "messages": [
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 500,
+        "max_tokens": 600,
     }
 
     data = json.dumps(payload).encode("utf-8")
 
     headers = {
-        "Authorization": f"Bearer {LLM_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://beauty-content-generator",
-        "X-Title": "beauty-content-generator",
+        "Authorization": f"Bearer {api_key}",
     }
 
     request = urllib.request.Request(
-        LLM_API_URL,
+        MISTRAL_API_URL,
         data=data,
         headers=headers,
         method="POST",
@@ -46,11 +46,13 @@ def call_llm(prompt: str) -> str:
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             body = response.read().decode("utf-8")
-    except (HTTPError, URLError, TimeoutError):
+    except (HTTPError, URLError, TimeoutError) as e:
+        print("LLM request error:", e)
         return FALLBACK_TEXT
 
     try:
         parsed = json.loads(body)
         return parsed["choices"][0]["message"]["content"].strip()
-    except Exception:
+    except Exception as e:
+        print("LLM parse error:", e)
         return FALLBACK_TEXT
