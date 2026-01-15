@@ -1,41 +1,43 @@
-﻿import json
+import os
+import json
 import urllib.request
 from urllib.error import HTTPError, URLError
 
-from app.config import get_settings
+LLM_API_KEY = os.getenv("LLM_API_KEY")
+LLM_API_URL = os.getenv("LLM_API_URL")
 
-MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
-DEFAULT_MODEL = "mistral-small-latest"
 FALLBACK_TEXT = (
     "Сервис генерации временно недоступен. "
-    "Укажите LLM_API_KEY в окружении."
+    "Укажите LLM_API_KEY и LLM_API_URL в окружении."
 )
+
+DEFAULT_MODEL = "mistralai/mistral-7b-instruct"
 
 
 def call_llm(prompt: str) -> str:
-    settings = get_settings()
-    api_key = settings.llm_api_key
-    model = settings.llm_model or DEFAULT_MODEL
-
-    if not api_key:
+    if not LLM_API_KEY or not LLM_API_URL:
         return FALLBACK_TEXT
 
     payload = {
-        "model": model,
+        "model": DEFAULT_MODEL,
         "messages": [
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.7,
+        "max_tokens": 500,
     }
 
     data = json.dumps(payload).encode("utf-8")
+
     headers = {
+        "Authorization": f"Bearer {LLM_API_KEY}",
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": "https://beauty-content-generator",
+        "X-Title": "beauty-content-generator",
     }
 
     request = urllib.request.Request(
-        MISTRAL_API_URL,
+        LLM_API_URL,
         data=data,
         headers=headers,
         method="POST",
@@ -44,15 +46,11 @@ def call_llm(prompt: str) -> str:
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             body = response.read().decode("utf-8")
-    except (HTTPError, URLError, TimeoutError, ValueError):
+    except (HTTPError, URLError, TimeoutError):
         return FALLBACK_TEXT
 
     try:
         parsed = json.loads(body)
-    except json.JSONDecodeError:
-        return FALLBACK_TEXT
-
-    try:
         return parsed["choices"][0]["message"]["content"].strip()
-    except (KeyError, IndexError, TypeError, AttributeError):
+    except Exception:
         return FALLBACK_TEXT
