@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-const DEFAULT_API = "http://localhost:8000";
+const DEFAULT_API = "";
 const transition = { duration: 0.5, ease: "easeOut" };
 
 const benefits = [
@@ -313,3 +313,4 @@ export default function Page() {
     </motion.main>
   );
 }
+
